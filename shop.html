@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Kosmonavtika Shop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #080810;
+    --surface:  #0f0f1e;
+    --card:     #13132a;
+    --border:   #1e1e3a;
+    --accent:   #c8ff00;
+    --accent2:  #7b61ff;
+    --text:     #e8e8f0;
+    --muted:    #5a5a7a;
+    --danger:   #ff4d6d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(200,255,0,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 70%, rgba(123,97,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 60%, rgba(200,255,0,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 35% 50%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 65% 85%, rgba(123,97,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 40%, rgba(255,255,255,0.2) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,8,16,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--text); }
+
+  .cart-btn {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 40px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+  .cart-btn:active { transform: scale(0.96); }
+  .cart-btn.has-items { border-color: var(--accent); color: var(--accent); }
+
+  .cart-count {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 16px 20px 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── VIEWS ── */
+  .view { display: none; padding: 20px; position: relative; z-index: 1; }
+  .view.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* ── PRODUCT CARDS ── */
+  .products-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .product-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle at top right, rgba(200,255,0,0.06), transparent 70%);
+    pointer-events: none;
+  }
+
+  .product-card:active { border-color: var(--accent2); }
+
+  .product-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--surface), var(--border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .product-info { flex: 1; min-width: 0; }
+
+  .product-origin {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .product-name {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .product-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .product-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .product-price {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .add-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+  .add-btn:active { transform: scale(0.88); }
+
+  /* Qty controls */
+  .qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .qty-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .qty-btn:active { background: var(--border); }
+
+  .qty-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+    color: var(--accent);
+  }
+
+  /* ── CART VIEW ── */
+  .cart-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .cart-empty .emoji { font-size: 48px; margin-bottom: 16px; display: block; }
+  .cart-empty p { font-size: 13px; line-height: 1.6; }
+
+  .cart-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .cart-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cart-item-name {
+    flex: 1;
+    font-size: 12px;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+  }
+
+  .cart-item-price {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  .cart-total {
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .cart-total-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .cart-total-sum {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+
+  /* ── FORM ── */
+  .form-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .form-group { margin-bottom: 14px; }
+
+  .form-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .form-input:focus { border-color: var(--accent2); }
+  .form-input::placeholder { color: var(--muted); }
+
+  /* Delivery toggle */
+  .delivery-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .delivery-option {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .delivery-option.selected {
+    border-color: var(--accent);
+    background: rgba(200,255,0,0.06);
+  }
+
+  .delivery-option .icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .delivery-option .label {
+    font-size: 11px;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── ORDER BUTTON ── */
+  .order-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 18px;
+    border-radius: 14px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 32px;
+  }
+  .order-btn:active { transform: scale(0.98); background: #b8ef00; }
+  .order-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── SUCCESS ── */
+  .success-view {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .success-view.show { display: flex; }
+
+  .success-orbit {
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin-bottom: 28px;
+    animation: orbit-pulse 2s ease-in-out infinite;
+    position: relative;
+  }
+
+  .success-orbit::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px dashed rgba(200,255,0,0.3);
+    animation: spin 8s linear infinite;
+  }
+
+  @keyframes orbit-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(200,255,0,0.3); }
+    50% { box-shadow: 0 0 40px rgba(200,255,0,0.6); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .success-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+
+  .success-sub {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 280px;
+  }
+
+  /* Animations */
+  .product-card, .cart-item {
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .view.active .product-card:nth-child(1) { animation-delay: 0.05s; }
+  .view.active .product-card:nth-child(2) { animation-delay: 0.10s; }
+  .view.active .product-card:nth-child(3) { animation-delay: 0.15s; }
+  .view.active .product-card:nth-child(4) { animation-delay: 0.20s; }
+  .view.active .product-card:nth-child(5) { animation-delay: 0.25s; }
+  .view.active .product-card:nth-child(6) { animation-delay: 0.30s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">KOSMO<span>NAVTIKA</span></div>
+  <button class="cart-btn" onclick="showCart()" id="cartBtn">
+    🛒 Корзина
+    <span class="cart-count" id="cartCount" style="display:none">0</span>
+  </button>
+</header>
+
+<!-- TABS -->
+<div class="tabs" id="mainTabs">
+  <div class="tab active" onclick="switchTab('catalog')">☕ Каталог</div>
+  <div class="tab" onclick="switchTab('cart')">🛒 Заказ</div>
+</div>
+
+<!-- CATALOG -->
+<div class="view active" id="catalogView">
+  <p class="section-title">Зёрна спешалти</p>
+  <div class="products-grid" id="productsList"></div>
+</div>
+
+<!-- CART + FORM -->
+<div class="view" id="cartView">
+  <div id="cartEmpty" class="cart-empty">
+    <span class="emoji">🚀</span>
+    <p>Корзина пуста.<br>Выбери кофе в каталоге!</p>
+  </div>
+
+  <div id="cartContent" style="display:none">
+    <p class="section-title">Твой выбор</p>
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-total">
+      <span class="cart-total-label">Итого</span>
+      <span class="cart-total-sum" id="cartTotalSum">0 MDL</span>
+    </div>
+
+    <p class="form-title">Способ получения</p>
+    <div class="delivery-toggle">
+      <div class="delivery-option selected" onclick="selectDelivery('pickup')" id="opt-pickup">
+        <span class="icon">🏪</span>
+        <span class="label">Самовывоз</span>
+      </div>
+      <div class="delivery-option" onclick="selectDelivery('delivery')" id="opt-delivery">
+        <span class="icon">🚀</span>
+        <span class="label">Доставка</span>
+      </div>
+    </div>
+
+    <p class="form-title">Контакты</p>
+    <div class="form-group">
+      <input class="form-input" id="fieldName" type="text" placeholder="Твоё имя" autocomplete="name"/>
+    </div>
+    <div class="form-group">
+      <input class="form-input" id="fieldPhone" type="tel" placeholder="Номер телефона (+373...)" autocomplete="tel"/>
+    </div>
+    <div id="addressBlock" class="form-group" style="display:none">
+      <input class="form-input" id="fieldAddress" type="text" placeholder="Адрес доставки"/>
+    </div>
+
+    <button class="order-btn" onclick="submitOrder()" id="orderBtn">
+      🚀 Оформить заказ
+    </button>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-view" id="successView">
+  <div class="success-orbit">☕</div>
+  <div class="success-title">Заказ принят!</div>
+  <p class="success-sub">Мы свяжемся с тобой в ближайшее время. Спасибо что выбираешь спешалти! 🌍</p>
+</div>
+
+<script>
+// ── ДАННЫЕ ──────────────────────────────────────
+const PRODUCTS = [
+  { id: 1, name: "Иргачеф",    origin: "Эфиопия",  weight: "250г", price: 350, notes: "Жасмин · Бергамот · Персик",    icon: "🌸" },
+  { id: 2, name: "Уила",       origin: "Колумбия",  weight: "250г", price: 320, notes: "Карамель · Красное яблоко · Орех", icon: "🍎" },
+  // Добавь сюда остальные позиции ↓
+  // { id: 3, name: "...", origin: "...", weight: "250г", price: 000, notes: "...", icon: "☕" },
+];
+
+// Telegram Web App
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+}
+
+// ── STATE ────────────────────────────────────────
+let cart = {};        // { productId: qty }
+let deliveryType = "pickup";
+
+// ── RENDER CATALOG ───────────────────────────────
+function renderCatalog() {
+  const list = document.getElementById("productsList");
+  list.innerHTML = PRODUCTS.map(p => `
+    <div class="product-card">
+      <div class="product-icon">${p.icon}</div>
+      <div class="product-info">
+        <div class="product-origin">${p.origin}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-meta">${p.weight} · ${p.notes}</div>
+      </div>
+      <div class="product-right">
+        <div class="product-price">${p.price} MDL</div>
+        <div id="ctrl-${p.id}">${renderAddBtn(p.id)}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderAddBtn(id) {
+  const qty = cart[id] || 0;
+  if (qty === 0) return `<button class="add-btn" onclick="addToCart(${id})">+</button>`;
+  return `
+    <div class="qty-controls">
+      <button class="qty-btn" onclick="changeQty(${id}, -1)">−</button>
+      <span class="qty-num">${qty}</span>
+      <button class="qty-btn" onclick="changeQty(${id}, 1)">+</button>
+    </div>`;
+}
+
+// ── CART ACTIONS ─────────────────────────────────
+function addToCart(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  updateUI(id);
+}
+
+function changeQty(id, delta) {
+  cart[id] = Math.max(0, (cart[id] || 0) + delta);
+  if (cart[id] === 0) delete cart[id];
+  updateUI(id);
+}
+
+function updateUI(id) {
+  const ctrl = document.getElementById(`ctrl-${id}`);
+  if (ctrl) ctrl.innerHTML = renderAddBtn(id);
+  updateCartBadge();
+}
+
+function updateCartBadge() {
+  const total = Object.values(cart).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById("cartCount");
+  const btn   = document.getElementById("cartBtn");
+  badge.textContent = total;
+  badge.style.display = total > 0 ? "flex" : "none";
+  btn.classList.toggle("has-items", total > 0);
+}
+
+// ── CART RENDER ──────────────────────────────────
+function renderCart() {
+  const ids = Object.keys(cart);
+  const empty   = document.getElementById("cartEmpty");
+  const content = document.getElementById("cartContent");
+
+  if (ids.length === 0) {
+    empty.style.display = "block";
+    content.style.display = "none";
+    return;
+  }
+
+  empty.style.display = "none";
+  content.style.display = "block";
+
+  let total = 0;
+  const itemsEl = document.getElementById("cartItems");
+  itemsEl.innerHTML = ids.map(id => {
+    const p = PRODUCTS.find(x => x.id == id);
+    const subtotal = p.price * cart[id];
+    total += subtotal;
+    return `
+      <div class="cart-item">
+        <span style="font-size:20px">${p.icon}</span>
+        <div class="cart-item-name">${p.origin} ${p.name}<br>
+          <span style="color:var(--muted);font-size:10px;font-family:'Space Mono'">${cart[id]} × ${p.price} MDL</span>
+        </div>
+        <span class="cart-item-price">${subtotal} MDL</span>
+        <button class="remove-btn" onclick="removeItem(${id})">✕</button>
+      </div>`;
+  }).join("");
+
+  document.getElementById("cartTotalSum").textContent = `${total} MDL`;
+}
+
+function removeItem(id) {
+  delete cart[id];
+  updateCartBadge();
+  renderCart();
+}
+
+// ── DELIVERY ─────────────────────────────────────
+function selectDelivery(type) {
+  deliveryType = type;
+  document.getElementById("opt-pickup").classList.toggle("selected", type === "pickup");
+  document.getElementById("opt-delivery").classList.toggle("selected", type === "delivery");
+  document.getElementById("addressBlock").style.display = type === "delivery" ? "block" : "none";
+}
+
+// ── TABS ─────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach((t, i) => {
+    t.classList.toggle("active", (tab === "catalog" && i === 0) || (tab === "cart" && i === 1));
+  });
+  document.getElementById("catalogView").classList.toggle("active", tab === "catalog");
+  document.getElementById("cartView").classList.toggle("active", tab === "cart");
+  if (tab === "cart") renderCart();
+}
+
+function showCart() { switchTab("cart"); }
+
+// ── SUBMIT ───────────────────────────────────────
+async function submitOrder() {
+  const name    = document.getElementById("fieldName").value.trim();
+  const phone   = document.getElementById("fieldPhone").value.trim();
+  const address = document.getElementById("fieldAddress").value.trim();
+
+  if (!name || !phone) {
+    alert("Заполни имя и телефон!");
+    return;
+  }
+  if (deliveryType === "delivery" && !address) {
+    alert("Укажи адрес доставки!");
+    return;
+  }
+  if (Object.keys(cart).length === 0) {
+    alert("Корзина пуста!");
+    return;
+  }
+
+  // Формируем текст заказа
+  let lines = [];
+  let total  = 0;
+  for (const id in cart) {
+    const p = PRODUCTS.find(x => x.id == id);
+    const sub = p.price * cart[id];
+    total += sub;
+    lines.push(`${p.icon} ${p.origin} ${p.name} × ${cart[id]} = ${sub} MDL`);
+  }
+
+  const orderText = [
+    `📦 НОВЫЙ ЗАКАЗ`,
+    `👤 ${name}`,
+    `📞 ${phone}`,
+    deliveryType === "delivery" ? `🏠 Доставка: ${address}` : `🏪 Самовывоз`,
+    ``,
+    lines.join("\n"),
+    ``,
+    `💰 Итого: ${total} MDL`,
+  ].join("\n");
+
+  // Отправка через Telegram WebApp
+  if (tg) {
+    tg.sendData(JSON.stringify({
+      type: "shop_order",
+      name, phone, address,
+      delivery: deliveryType,
+      cart: Object.entries(cart).map(([id, qty]) => {
+        const p = PRODUCTS.find(x => x.id == id);
+        return { name: `${p.origin} ${p.name}`, qty, price: p.price };
+      }),
+      total,
+      orderText,
+    }));
+  }
+
+  // Показываем успех
+  document.getElementById("mainTabs").style.display = "none";
+  document.getElementById("catalogView").classList.remove("active");
+  document.getElementById("cartView").classList.remove("active");
+  document.getElementById("successView").classList.add("show");
+
+  cart = {};
+  updateCartBadge();
+}
+
+// ── INIT ─────────────────────────────────────────
+renderCatalog();
+</script>
+</body>
+</html>
